@@ -58,6 +58,17 @@ public class AsList {
         ((User)ulist.get(0)).setUsername("22222222222222");
         System.out.println("反之"+users[0].getUsername());
 
+        /*直接构造*/
+        List list1 = Arrays.asList("1","2","3","4");
+        //List list2 = Arrays.asList(1,2,3,4,5,6);
+
+        for (Object obj:list1){
+            System.out.println("list1:" + obj);
+        }
+        /*for (Object obj:list2){
+            System.out.println("list2:" + obj);
+        }*/
+
     }
 }
 
