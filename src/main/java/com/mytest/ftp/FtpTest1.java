@@ -1,5 +1,8 @@
 package com.mytest.ftp;
 
+import com.mytest.msg.WebService1;
+import com.mytest.msg.WebService1Soap;
+import lombok.extern.slf4j.Slf4j;
 import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
 
@@ -14,28 +17,13 @@ import static com.mytest.cmd.CMDTest.cmd;
  * Created by duanxun on 2018-08-23.
  * （公司用) ftp 连接下载文件(监测磁盘空间)
  */
+@Slf4j
 public class FtpTest1 {
     public static void main(String[] args) {
-
         String ip1 = "192.168.3.15";
-
-        FtpClient ftpClient1 = connectFTP(ip1,21,"ftpuser","123!@#asd");
-        try {
-            String str1 = readStr("192.168.3.15_S.txt",ftpClient1);
-            System.out.println("测试" + str1);
-            Volume volume1 = getVolume(str1);
-            double ratio1 = getRatio(volume1);
-            if (ratio1 >= 85){
-                System.out.println(ip1 + "的服务器S盘空间已不足" + (int)(100 - ratio1) + "%,总空间:字节总数 " + (int)(volume1.getTotalByte()/(1024.0 * 1024.0 * 1024.0)) +
-                        "GB,可用空间:可用字节总数 " + (int)(volume1.getAvailableByte()/(1024.0 * 1024.0 * 1024.0)) + "GB,请及时清理空间。");
-            }
-            System.out.println(ip1 + "的服务器S盘空间已不足" + (int)(100 - ratio1) + "%,总空间:字节总数 " + (int)(volume1.getTotalByte()/(1024.0 * 1024.0 * 1024.0)) +
-                    "GB,可用空间:可用字节总数 " + (int)(volume1.getAvailableByte()/(1024.0 * 1024.0 * 1024.0)) + "GB,请及时清理空间。");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (FtpProtocolException e) {
-            e.printStackTrace();
-        }
+        String ip2 = "192.168.3.16";
+        diskMonitor(ip1);
+        diskMonitor(ip2);
     }
 
     //连接到ftp
@@ -113,9 +101,6 @@ public class FtpTest1 {
     public static Volume getVolume(String str){
         Volume volume = new Volume();
         String[] strs = str.split(",");
-        for (int i=0; i<strs.length ;i++){
-            System.out.println(strs[i]);
-        }
         String availableByte = strs[0].substring(strs[0].indexOf(":") + 1);
         String totalByte = strs[1].substring(strs[1].indexOf(":") + 1);
         volume.setAvailableByte(Double.valueOf(availableByte));
@@ -126,7 +111,32 @@ public class FtpTest1 {
     //硬盘占用空间是否大于等于85%
     public static double getRatio(Volume volume){
         double ratio = (1 - volume.getAvailableByte()/volume.getTotalByte()) * 100;
-        System.out.println("(1 - " + volume.getAvailableByte() + "/" + volume.getTotalByte()  + ") * 100 = " + ratio);
+        //System.out.println("(1 - " + volume.getAvailableByte() + "/" + volume.getTotalByte()  + ") * 100 = " + ratio);
         return ratio;
     }
+
+    //磁盘监控
+    public static void diskMonitor(String ip){
+        FtpClient ftpClient1 = connectFTP(ip,21,"ftpuser","123!@#asd");
+        try {
+            String str1 = readStr(ip + "_S.txt",ftpClient1);
+            //System.out.println("测试" + str1);
+            Volume volume1 = getVolume(str1);
+            double ratio1 = getRatio(volume1);
+            if (ratio1 >= 85){
+                String msg = ip + "的服务器S盘空间已不足" + (int)(100 - ratio1) + "%,总空间:字节总数 " + (int)(volume1.getTotalByte()/(1024.0 * 1024.0 * 1024.0)) +
+                        "GB,可用空间:可用字节总数 " + (int)(volume1.getAvailableByte()/(1024.0 * 1024.0 * 1024.0)) + "GB,请及时清理空间。";
+                WebService1 webService1 = new WebService1();
+                WebService1Soap service1Soap= webService1.getWebService1Soap();
+                String result = service1Soap.txtServerMsg("硬盘占用率监控",msg,null);
+            }
+            System.out.println(ip + "的服务器S盘空间已不足" + (int)(100 - ratio1) + "%,总空间:字节总数 " + (int)(volume1.getTotalByte()/(1024.0 * 1024.0 * 1024.0)) +
+                    "GB,可用空间:可用字节总数 " + (int)(volume1.getAvailableByte()/(1024.0 * 1024.0 * 1024.0)) + "GB,请及时清理空间。");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (FtpProtocolException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
